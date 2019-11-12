@@ -3,15 +3,22 @@
 function menu()
 {
 	repetir=1
-	until test $repetir -eq 1
-	do
-		echo Seleccione una opcion:
+        fin=0
+	echo dsa
+	until test $repetir -eq $fin
+	do 
+		echo Seleccione una opcion
 		echo 1 - Mostrar el codigo del programa
 		echo 2 - Compilar el programa
 		echo 3 - Ejecutar el programa
 		echo 4 - Salir del menu
 		read opcion
-		if opcion -lt 1 && opcion -gt 4
+		if test $opcion -lt 1
+		then
+			echo Opcion no valida, el valor debe ser un entero entre 1 y 4.
+			echo Relanzando menu.
+			echo -e
+		elif test $opcion -gt 4
 		then
 			echo Opcion no valida, el valor debe ser un entero entre 1 y 4.
 			echo Relanzando menu.
@@ -25,8 +32,9 @@ function menu()
 
 function obtenerNumPinches()
 {
-	valido=0
-	until test $repetir -eq 0
+	repetir=1
+
+	until test $repetir -eq 1
 	do
 		echo Introduza el numero de pinches
 		read opcion
@@ -45,10 +53,14 @@ function obtenerNumPinches()
 
 if test -f PracticaIntermedia.c
 then
+	
 	proc=0
-	until test $proc -eq 4
-	do
+        fin=4
+	if test $proc -ne $fin 
+        then
+		
 		proc=`menu`
+		echo $proc
 		case $proc in
 			valor1)	
 				echo Se ha entrado en la opcion 1
@@ -60,7 +72,7 @@ then
 				echo Se ha entrado en la opcion 3
 			;;
 		esac
-	done
+	fi
 else
 	echo No se encuentra el codigo del programa
 fi
