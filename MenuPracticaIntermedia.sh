@@ -3,7 +3,7 @@
 function menu()
 {
 	repetir=1
-	until $repetir -eq 1
+	until test $repetir -eq 1
 	do
 		echo Seleccione una opcion:
 		echo 1 - Mostrar el codigo del programa
@@ -26,7 +26,7 @@ function menu()
 function obtenerNumPinches()
 {
 	valido=0
-	until $repetir -eq 0
+	until test $repetir -eq 0
 	do
 		echo Introduza el numero de pinches
 		read opcion
@@ -45,21 +45,21 @@ function obtenerNumPinches()
 
 if test -f PracticaIntermedia.c
 then
-until $proc -eq 4
+	proc=0
+	until test $proc -eq 4
 	do
 		proc=`menu`
 		case $proc in
 			valor1)	
-				`cat PracticaIntermedia.c`
+				echo Se ha entrado en la opcion 1
+			;;
 			valor2)
-				`gcc -o PracticaIntermedia ./PracticaIntermedia.c`
+				echo Se ha entrado en la opcion 2
+			;;
 			valor3)
-				if `test -f PracticaIntermedia`
-				then
-					numPinches=`obtenerNumPinches`
-				else
-					echo El archivo ejecutable no existe o no hay permisos de ejecucion
-				fi
+				echo Se ha entrado en la opcion 3
+			;;
+		esac
 	done
 else
 	echo No se encuentra el codigo del programa
