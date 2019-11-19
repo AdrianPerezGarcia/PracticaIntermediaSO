@@ -15,6 +15,7 @@ void manejadoraPinche(int s);
 
 /* Funcion principal */
 int main(int argc, char const *argv[]){
+	printf("Se ha creado el chef con pid %d hijo de %d.\n" getpid(), getppid() );
 	/* Compruebo que se ha introducido un solo valor positivo como argumento */
 	if (argc != 2){
 		printf("Error: Parametros incorrectos.\n");
@@ -33,6 +34,7 @@ int main(int argc, char const *argv[]){
 
 	pidJefeSala = fork();
 	if(pidJefeSala == 0){
+		printf("Se ha creado el jefe de sala con pid %d hijo de %d.\n" getpid(), getppid());
 		sjef.sa_handler = manejadoraJefeSala;
 		if(-1 == sigaction(SIGUSR1, &ssom, NULL)){
 			perror("Jefe de Sala: sigaction");
@@ -41,6 +43,7 @@ int main(int argc, char const *argv[]){
 	} else{
 		pidSomelier = fork();
 		if(pidSomelier == 0){
+			printf("Se ha creado el sommelier con pid %d hijo de %d.\n" getpid(), getppid());
 			ssom.sa_handler = manejadoraSomelier;
 			int sigaction(SIGUSR1, &ssom, NULL);
 			int sigaction(SIGUSR2, &ssom, NULL);
@@ -53,6 +56,7 @@ int main(int argc, char const *argv[]){
 				if(*(numPinches+i) != 0){
 					break;
 				} else{
+					printf("Se ha creado el pinche %d con pid %d hijo de %d.\n" i, getpid(), getppid());
 					spin.sa_handler = manejadoraPinche;
 					if(-1 == sigaction(SIGUSR1, &spin, NULL)){
 					perror("Pinche: sigaction");
@@ -119,6 +123,7 @@ void manejadoraSomelier(int s){
 	struct sigaction = smoz;
 	pid_t pidMozo = fork();
 	if (pidMozo == 0){
+		printf("Se ha creado el mozo con pid %d hijo de %d.\n" getpid(), getppid());
 		smoz.sa_handler = manejadoraMozo;
 		if(-1 == sigaction(SIGPIPE, &smoz, NULL)){
 			perror("Mozo: sigaction");
