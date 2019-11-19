@@ -103,20 +103,46 @@ int calculaAleatorios(int min, int max){
 }
 
 void manejadoraSomelier(int s){
-	printf("Somelier: He llegado a la manejadora.\n");
+	printf("Somelier: Recibido, ahora mismo te digo Chef.\n");
+	struct sigaction = smoz;
 	pid_t pidMozo = fork();
 	if (pidMozo == 0){
-		/* code */
+		smoz.sa_handler = manejadoraMozo;
+		if(-1 == sigaction(SIGPIPE, &smoz, NULL)){
+			perror("Mozo: sigaction");
+			return 1;
+		}
+		
 	} else{
+		int status, loEncontro;
 		if(s == SIGUSR1){
 			printf("Somelier: ¿Has oido mozo? Necesitamos ingredientes.\n");
-		}
-		else{
+			kill(pidMozo, SIGPIPE);
+			wait(&status);
+			loEncontro = WEXITSTATUS(status);
+			if (loEncontro == 1){
+				printf("Sommelier: Tenemos los ingredientes Chef.\n");
+				exit(3);
+			} else{
+				printf("Sommelier: No tenemos los ingredientes Chef.\n");
+				exit(2);
+			}
+		} else{
 			printf("Somelier: ¿Has oido mozo? Necesitamos vino.\n");
+			kill(pidMozo, SIGPIPE);
+			wait(&status);
+			loEncontro = WEXITSTATUS(status);
+			if (loEncontro == 1){
+				printf("Sommelier: Tenemos el vino Chef.\n");
+				exit(3);
+			} else{
+				printf("Sommelier: No tenemos el vino Chef.\n");
+				exit(1);
+			}
 		}
+		
+		
 	}
-	// El fork y que el hijo genere un aleatorio que devuelva al padre
-	// El padre devuelve 1,2,3 depende de lo que le diga el hijo y se muere
 }	
 
 void manejadoraJefeSala(int s){
@@ -125,17 +151,25 @@ void manejadoraJefeSala(int s){
 }
 
 void manejadoraMozo(int s){
-	printf("Mozo: Voy a ver que encuentro.\n");
+	printf("Mozo (a lo lejos): Voy a ver que encuentro.\n");
 	sleep(2);
-	int queHeEncontrado = calculaAleatorios(0,1);
-	if(queHeEncontrado == 1){
+	int loEncontre = calculaAleatorios(0,1);
+	if(loEncontre == 1){
 		printf("Mozo (a lo lejos): Aqui hay si.\n");
 	} else{
 		printf("Mozo (a lo lejos): Que va, no queda nada.\n");
 	}
-	exit(queHeEncontrado);
+	exit(loEncontre);
 }
 
 void manejadoraPinche(int s){
-	
+	printf("Pinche: Me pongo a preparar el plato.\n");
+	wait(calculaAleatorios(2,5);
+	int sePreparo = calculaAleatorios(0,1);
+	if(sePreparo == 1){
+		printf("Pinche: Plato preparado.\n");
+	} else{
+		printf("Pinche: No se ha podido preparar el plato.\n");
+	}
+	exit(sePreparo);
 }
