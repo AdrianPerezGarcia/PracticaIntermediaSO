@@ -7,6 +7,8 @@
 
 int calculaAleatorios(int min, int max);
 void manejadoraSomelier(int s);
+void manejadoraJefeSala(int s);
+void manejadoraMozo(int s);
 
 int main(int argc, char const *argv[]){
 	/* Compruebo que se ha introducido un solo valor positivo como argumento */
@@ -24,12 +26,26 @@ int main(int argc, char const *argv[]){
 	pid_t pidSomelier, pidJefeSala;
 	pid_t *pidPinches = (pid_t*)malloc(sizeof(pid_t)*numPinches);
 
-	pidSomelier = fork();
+	struct sigaction ssom, sjef;
+
+	pidJefeSala = fork();
 	if(pidSomelier == 0){
-		//Codigo Somelier
+		sjef.sa_handler = manejadoraJefeSala;
+		if(-1 == sigaction(SIGUSR1, &ssom, NULL)){
+			perror("Jefe de Sala: sigaction");
+			return 1;
+		}
 	}
 	else{
-		//Hay que crear por aqui al jefe de sala y ponerlo a dormir (Y a los pinches)
+		pidSomelier = fork();
+		if(pidSomelier == 0){
+			ssom.sa_handler = manejadoraSomelier;
+			int sigaction(SIGUSR1, &ssom, NULL);
+			int sigaction(SIGUSR2, &ssom, NULL);
+			pause();
+		}
+		else{
+			//Hay que crear a los pinches)
 		/*
 			Codigo pinches
 			int i;
@@ -52,25 +68,29 @@ int main(int argc, char const *argv[]){
 			printf("Chef: Me falta vino.\n");
 			kill(pidSomelier, SIGUSR2);
 		}
-		int queFalta = waitpid(); // ? La idea es parar hasta que se muera el sommelier y recoger el 1,2 o 3 que devuelve
+		wait(&status);
+		int queFalta = WEXITSTATUS(status);
 		switch(queFalta){
 			case 1:
-				//No hay vino, se acaba el programa, todos sus hijos estan muertos
+				//No hay vino, se acaba el programa.
+				kill(SIGTERM, pidJefeSala);
+				//Matar a los pinches
 				printf("Chef: No hay vino, así no hay quien trabaje.\n");
 				return 0;
 			break;
 			case 2:
 				//No hay algun ingrediente, no se acaba el programa pero hay que avisar
-				printf("Chef: Falta algun ingrediente, pero vamos alla.\n");
+				printf("Chef: Falta algun ingrediente, pero vamos allá.\n");
 			break;
 		}
-		//Hay que poner a trabajar a los pinches
+		//Hay que poner a trabajar a los pinches y cada plato bueno 
 		if(platosCreados == 0){
 			printf("Chef: No hay platos, cerramos.\n");
 			kill(pidJefeSala, SIGTERM);
 			return 0;
 		} else{
 			kill(pidJefeSala, SIGUSR1);
+		}
 		}
 	}
 
@@ -85,13 +105,37 @@ int calculaAleatorios(int min, int max){
 void manejadoraSomelier(int s){
 	printf("Somelier: He llegado a la manejadora.\n");
 	pid_t pidMozo = fork();
+	if (pidMozo == 0){
+		/* code */
+	} else{
+		if(s == SIGUSR1){
+			printf("Somelier: ¿Has oido mozo? Necesitamos ingredientes.\n");
+		}
+		else{
+			printf("Somelier: ¿Has oido mozo? Necesitamos vino.\n");
+		}
+	}
 	// El fork y que el hijo genere un aleatorio que devuelva al padre
 	// El padre devuelve 1,2,3 depende de lo que le diga el hijo y se muere
 }	
 
 void manejadoraJefeSala(int s){
-	printf("Jefe de Sala: He llegado a la manejadora.\n");
 	sleep(3);
-	printf("Jefe de Sala: Se han montado todas las mesas.\n"); 
-	// Muere, no se si esto se hace aqui o en el main
+	printf("Jefe de Sala: Se han montado todas las mesas.\n");
+}
+
+void manejadoraMozo(int s){
+	printf("Mozo: Voy a ver que encuentro.\n");
+	sleep(2);
+	int queHeEncontrado = calculaAleatorios(0,1);
+	if(queHeEncontrado == 1){
+		printf("Mozo (a lo lejos): Aqui hay si.\n");
+	} else{
+		printf("Mozo (a lo lejos): Que va, no queda nada.\n");
+	}
+	exit(queHeEncontrado);
+}
+
+void manejadoraPinche(int s){
+	
 }
