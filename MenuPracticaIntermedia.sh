@@ -1,79 +1,43 @@
 #!/bin/bash
 
-function menu()
-{
-	repetir=1
-        fin=0
-	echo dsa
-	until test $repetir -eq $fin
-	do 
-		echo Seleccione una opcion
-		echo 1 - Mostrar el codigo del programa
-		echo 2 - Compilar el programa
-		echo 3 - Ejecutar el programa
-		echo 4 - Salir del menu
-		read opcion
-		if test $opcion -lt 1
-		then
-			echo Opcion no valida, el valor debe ser un entero entre 1 y 4.
-			echo Relanzando menu.
-			echo -e
-		elif test $opcion -gt 4
-		then
-			echo Opcion no valida, el valor debe ser un entero entre 1 y 4.
-			echo Relanzando menu.
-			echo -e
-		else 
-			repetir=0
-		fi	
-	done
-	echo $opcion
-}
-
-function obtenerNumPinches()
-{
-	repetir=1
-
-	until test $repetir -eq 1
-	do
-		echo Introduza el numero de pinches
-		read opcion
-		if opcion -lt 1
-		then
-			echo Opcion no valida, el valor debe ser un entero mayor que 0.
-			echo Relanzando menu.
-			echo -e
-		else 
-			repetir=0
-		fi	
-	done
-	echo $opcion	
-}
-
-
 if test -f PracticaIntermedia.c
 then
-	
-	proc=0
-        fin=4
-	if test $proc -ne $fin 
-        then
-		
-		proc=`menu`
-		echo $proc
-		case $proc in
-			valor1)	
-				echo Se ha entrado en la opcion 1
+	entrada=0
+	salida=4
+	while test $entrada -ne $salida
+	do
+		echo Mete una opcion
+		echo 1 - Mostrar el codigo del programa
+		echo 2 - Compilar el programa
+		echo 3 - Ejecutarlo
+		echo 4 - Salir
+		read entrada
+		case $entrada in
+			1)	
+				`cat ./PracticaIntermedia.c`
 			;;
-			valor2)
-				echo Se ha entrado en la opcion 2
+			2)
+				`gcc PracticaIntermedia.c -o PracticaIntermedia`
 			;;
-			valor3)
-				echo Se ha entrado en la opcion 3
+			3)
+				sol=`umask`
+				if test -f PracticaIntermedia && umask >= 100
+				then
+					echo Introduce el numero de pinches
+					read pinches
+					`./PracticaIntermedia $pinches`
+				else 
+					echo Error: No existe el ejecutable o no se encuentra en el mismo directorio
+				fi
 			;;
+			4)
+				echo Saliendo del programa
+			;;
+			*)
+				echo Introduce un valor entre 1 y 4
+				echo Relanzando menu
 		esac
-	fi
+	done
 else
-	echo No se encuentra el codigo del programa
+	echo Error: No se encuentra el codigo del programa
 fi
-echo Saliendo del programa
