@@ -41,14 +41,13 @@ int main(int argc, char const *argv[]){
 	if(pidJefeSala == 0){
 		/* Código del Jefe de Sala*/
 
-		/* Se crea, se le asigna SIGUSR1 a su manejadora y se pone en pause, cuando se ejecute esta manejadora se sale con valor 0 */
+		/* Se crea, se le asigna SIGUSR1 a su manejadora y se pone en pause, cuando se ejecute esta manejadora el proceso morira dentro */
 		printf("Se ha creado el jefe de sala con pid %d hijo de %d.\n" ,getpid(), getppid());
 		sjef.sa_handler = manejadoraJefeSala;
 		if(-1 == sigaction(SIGUSR1, &sjef, NULL)){
 			perror("Jefe de Sala: sigaction");
 		}
 		pause();
-		exit(0);
 	}
 	else if(pidJefeSala == -1){
 		perror("Error en la llamada fork");
@@ -75,7 +74,7 @@ int main(int argc, char const *argv[]){
 			for(i = 0; i<numPinches; i++){
 				*(pidPinches+i) = fork();
 				if(*(pidPinches+i) == 0){
-					printf("Se ha creado un pinche con pid %d hijo de %d.\n" ,i+1, getpid(), getppid());
+					printf("Se ha creado un pinche con pid %d hijo de %d.\n" ,getpid(), getppid());
 					spin.sa_handler = manejadoraPinche;
 					if(-1 == sigaction(SIGUSR1, &spin, NULL)){
 						perror("Pinche: sigaction");
@@ -156,13 +155,19 @@ int calculaAleatorios(int min, int max){
 }
 
 
+/* Manejadora del Sommelier */
 void manejadoraSommelier(int s){
 	/*
 	printf("Somelier: Recibido Chef, ahora mismo te digo.\n");
+
+	/* Se define la estructura del mozo y se crea el proceso con un fork 
 	struct sigaction smoz = {0};
 	pid_t pidMozo;
 	pidMozo = fork();
 	if (pidMozo == 0){
+		/* Código del Mozo */
+
+		/* Se crea, se enmascara SIGPIPE y se pone el proceso en pausa, el proceso muere en su manejadora 
 		printf("Se ha creado el mozo con pid %d hijo de %d.\n" ,getpid(), getppid());
 		smoz.sa_handler = manejadoraMozo;
 		if(-1 == sigaction(SIGPIPE, &smoz, NULL)){
@@ -170,13 +175,15 @@ void manejadoraSommelier(int s){
 		}
 		pause();
 	} else{
+		/* Código del Sommelier */
+
+		/* Se duerme un tiempo para que al Mozo le de tiempo a enmascarar la señal y se le envia la señal SIGPIPE 
 		int status, loEncontro;
 		printf("Somelier: ¿Has oido mozo? Busca a ver que hay.\n");
-		sleep(2);
+		sleep(1);
 		int killed = kill(pidMozo, SIGPIPE);
-		if(killed == 0){
-			printf("Sa enviao.\n");
-		}
+
+		/* Se recoge el valor que deje el Mozo y segun la señal que recibio el Sommelier se sale con un valor u otro para que lo recoja el main 
 		wait(&status);
 		loEncontro = WEXITSTATUS(status);
 		if (loEncontro == 1){
@@ -195,17 +202,26 @@ void manejadoraSommelier(int s){
 
 }	
 
-
+/* Manejadora del Jefe de Sala */
 void manejadoraJefeSala(int s){
 	printf("Jefe de Sala: Recibido Chef, me pongo a ello.\n");
+
+	/* Se realiza el procedimiento especificado en el enunciado y se sale con un valor 0 para que el main lo recoja */
 	sleep(3);
 	printf("Jefe de Sala: Se han montado todas las mesas.\n");
+	exit(0);
 }
 
+/* Manejadora del Mozo */
 void manejadoraMozo(int s){
-	printf("Mozo (a lo lejos): REcibido Sommelier, voy a ver que encuentro.\n");
+	printf("Mozo (a lo lejos): Recibido Sommelier, voy a ver que encuentro.\n");
+
+	/* El mozo no sabe lo que tiene que buscar solo si lo encuentra o no, para eso se cambia la semilla y se genera un aleatorio */
+	srand(getpid());
 	sleep(2);
 	int loEncontre = calculaAleatorios(0,1);
+
+	/* Si se encontro o no se imprime un mensaje y se sale del programa con ese valor para que lo recoja el Sommelier */
 	if(loEncontre == 1){
 		printf("Mozo (a lo lejos): Aqui hay si.\n");
 	} else{
@@ -214,11 +230,16 @@ void manejadoraMozo(int s){
 	exit(loEncontre);
 }
 
+/* Manejadora del Pinche */
 void manejadoraPinche(int s){
-	srand(getpid());
 	printf("Pinche: Recibido Chef, me pongo a preparar el plato.\n");
+
+	/* Se cambia la semilla al pid del pinche para generar los aleatorios del tiempo de sueño y si se ha preparado o no */
+	srand(getpid());
 	sleep(calculaAleatorios(2,5));
 	int sePreparo = calculaAleatorios(0,1);
+
+	/* Si se preparo o no se imprime un mensaje y se sale del programa con ese valor para que lo recoja el main */
 	if(sePreparo == 1){
 		printf("Pinche: Plato preparado.\n");
 	} else{
