@@ -17,13 +17,17 @@ void manejadoraPinche(int s);
 /* Funcion principal */
 int main(int argc, char const *argv[]){
 
+	printf("COMIENZA EL RESTAURANTE.\n");
+
 	/* Compruebo que se ha introducido un solo valor positivo como argumento */
 	if (argc != 2){
 		printf("Error: Parametros incorrectos.\n");
+		printf("SE CIERRA EL RESTAURANTE.\n");
 		return -1;
 	} 
 	else if(atoi(argv[1]) < 1){
 		printf("Error: El número de pinches no puede ser menor que 1.\n");
+		printf("SE CIERRA EL RESTAURANTE.\n");
 		return -1;
 	}
 	printf("Se ha creado el chef con pid %d hijo de %d.\n" ,getpid(), getppid());
@@ -46,6 +50,7 @@ int main(int argc, char const *argv[]){
 		sjef.sa_handler = manejadoraJefeSala;
 		if(-1 == sigaction(SIGUSR1, &sjef, NULL)){
 			perror("Jefe de Sala: sigaction");
+			exit(-1);
 		}
 		pause();
 	}
@@ -61,6 +66,7 @@ int main(int argc, char const *argv[]){
 			ssom.sa_handler = manejadoraSommelier;
 			if(-1 == sigaction(SIGUSR1, &ssom, NULL)  || -1 == sigaction(SIGUSR2, &ssom, NULL)){
 				perror("Jefe de Sala: sigaction");
+				exit(-1);
 			}
 			pause();
 		} 
@@ -78,6 +84,7 @@ int main(int argc, char const *argv[]){
 					spin.sa_handler = manejadoraPinche;
 					if(-1 == sigaction(SIGUSR1, &spin, NULL)){
 						perror("Pinche: sigaction");
+						exit(-1);
 					}
 					pause();
 					break;
@@ -106,6 +113,7 @@ int main(int argc, char const *argv[]){
 					for( i=0; i<numPinches; i++){
 						kill(*(pidPinches+i) , SIGTERM);
 					}	
+					printf("SE CIERRA EL RESTAURANTE.\n");
 					return 0;
 				break;
 				case 2:
@@ -136,6 +144,7 @@ int main(int argc, char const *argv[]){
 			if(platosCreados == 0){
 				printf("Chef: No hay platos, cerramos.\n");
 				kill(pidJefeSala, SIGTERM);
+				printf("SE CIERRA EL RESTAURANTE.\n");
 				return 0;
 			} else{
 				printf("Chef: Tenemos %d platos cocinados, monta las mesas Jefe de Sala.\n", platosCreados);
@@ -146,7 +155,7 @@ int main(int argc, char const *argv[]){
 		}
 	}
 	/* Ejecucion correcta, se acaba el programa */
-	printf("Chef: PUEDE ABRIRSE EL RESTAURANTE.\n");
+	printf("PUEDE ABRIRSE EL RESTAURANTE.\n");
 	return 0;
 }
 
@@ -157,36 +166,38 @@ int calculaAleatorios(int min, int max){
 
 /* Manejadora del Sommelier */
 void manejadoraSommelier(int s){
-	/*
 	printf("Somelier: Recibido Chef, ahora mismo te digo.\n");
 
-	/* Se define la estructura del mozo y se crea el proceso con un fork 
+	/* Se define la estructura del mozo y se crea el proceso con un fork */
 	struct sigaction smoz = {0};
 	pid_t pidMozo;
 	pidMozo = fork();
 	if (pidMozo == 0){
 		/* Código del Mozo */
 
-		/* Se crea, se enmascara SIGPIPE y se pone el proceso en pausa, el proceso muere en su manejadora 
+		/* Se crea, se enmascara SIGPIPE y se pone el proceso en pausa, el proceso muere en su manejadora */
 		printf("Se ha creado el mozo con pid %d hijo de %d.\n" ,getpid(), getppid());
 		smoz.sa_handler = manejadoraMozo;
 		if(-1 == sigaction(SIGPIPE, &smoz, NULL)){
 			perror("Mozo: sigaction");
+			exit(-1);
 		}
 		pause();
-	} else{
+	} 
+	else if(pidMozo == -1){
+		perror("Error en la llamada al fork Mozo");
+	}else{
 		/* Código del Sommelier */
 
-		/* Se duerme un tiempo para que al Mozo le de tiempo a enmascarar la señal y se le envia la señal SIGPIPE 
-		int status, loEncontro;
-		printf("Somelier: ¿Has oido mozo? Busca a ver que hay.\n");
+		/* Se duerme un tiempo para que al Mozo le de tiempo a enmascarar la señal y se le envia la señal SIGPIPE */ 
+		int status;
 		sleep(1);
+		printf("Somelier: ¿Has oido mozo? Busca a ver que hay.\n");
 		int killed = kill(pidMozo, SIGPIPE);
 
-		/* Se recoge el valor que deje el Mozo y segun la señal que recibio el Sommelier se sale con un valor u otro para que lo recoja el main 
+		/* Se recoge el valor que deje el Mozo y segun la señal que recibio el Sommelier se sale con un valor u otro para que lo recoja el main */
 		wait(&status);
-		loEncontro = WEXITSTATUS(status);
-		if (loEncontro == 1){
+		if (WEXITSTATUS(status) == 1){
 			printf("Sommelier: Todo listo Chef.\n");
 			exit(3);
 		} else if(s == SIGUSR1){
@@ -197,9 +208,6 @@ void manejadoraSommelier(int s){
 			exit(1);
 		}
 	}
-	*/
-	exit(calculaAleatorios(1,3));
-
 }	
 
 /* Manejadora del Jefe de Sala */

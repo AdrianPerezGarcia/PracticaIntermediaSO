@@ -1,5 +1,6 @@
 #!/bin/bash
 
+echo -e
 echo Practica intermedia SSOO 2019-2020
 echo -e
 echo Adrián Pérez García
@@ -18,11 +19,13 @@ then
 		echo 3 - Ejecutarlo
 		echo 4 - Salir
 		read entrada
+		echo -e 
 		case $entrada in
 			1)	
 				cat PracticaIntermedia.c
 			;;
 			2)
+				echo Compilando...
 				gcc PracticaIntermedia.c -o PracticaIntermedia
 				echo Codigo compilado con exito
 			;;
@@ -32,7 +35,6 @@ then
 				then
 					echo Introduce el numero de pinches
 					read pinches
-					echo se han leido $pinches 
 					./PracticaIntermedia $pinches
 				else 
 					echo Error: No existe el ejecutable o no tiene permisos de ejecución
@@ -44,6 +46,7 @@ then
 			*)
 				echo Introduce un valor entre 1 y 4
 				echo Relanzando menu
+			;;
 		esac
 	done
 else
