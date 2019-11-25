@@ -35,42 +35,42 @@ int main(int argc, char const *argv[]){
 	srand(getpid());
 
 	/* Se crean los pid_t y se reserva memoria para el puntero de pinches */
-	pid_t pidSomelier, pidJefeSala;
+	pid_t pidSommelier, pidJefeSala;
 	pid_t *pidPinches = (pid_t*)malloc(sizeof(pid_t)*numPinches);
 
 	/* Se definen las sigaction para el Sommelier, Jefe de Sala y Pinches (La del mozo está en la manejadora del Sommelier) */
 	struct sigaction ssom, sjef, spin;
 
-	pidJefeSala = fork();
-	if(pidJefeSala == 0){
-		/* Código del Jefe de Sala*/
+	pidSommelier = fork();
+	if(pidSommelier == 0){
+		/* Código del Sommelier */
 
-		/* Se crea, se le asigna SIGUSR1 a su manejadora y se pone en pause, cuando se ejecute esta manejadora el proceso morira dentro */
-		printf("Se ha creado el jefe de sala con pid %d hijo de %d.\n" ,getpid(), getppid());
-		sjef.sa_handler = manejadoraJefeSala;
-		if(-1 == sigaction(SIGUSR1, &sjef, NULL)){
+		/* Se crea, se le asigna SIGUSR1 y SIGUSR2 a su manejadora y se pone en pause (Muere en su manejadora) */
+		printf("Se ha creado el sommelier con pid %d hijo de %d.\n" ,getpid(), getppid());
+		ssom.sa_handler = manejadoraSommelier;
+		if(-1 == sigaction(SIGUSR1, &ssom, NULL)  || -1 == sigaction(SIGUSR2, &ssom, NULL)){
 			perror("Jefe de Sala: sigaction");
 			exit(-1);
 		}
 		pause();
-	}
-	else if(pidJefeSala == -1){
+	} 
+	else if(pidSommelier == -1){
 		perror("Error en la llamada fork");
 	}else{
-		pidSomelier = fork();
-		if(pidSomelier == 0){
-			/* Código del Sommelier */
+		pidJefeSala = fork();
+		if(pidJefeSala == 0){
+			/* Código del Jefe de Sala*/
 
-			/* Se crea, se le asigna SIGUSR1 y SIGUSR2 a su manejadora y se pone en pause (Muere en su manejadora) */
-			printf("Se ha creado el sommelier con pid %d hijo de %d.\n" ,getpid(), getppid());
-			ssom.sa_handler = manejadoraSommelier;
-			if(-1 == sigaction(SIGUSR1, &ssom, NULL)  || -1 == sigaction(SIGUSR2, &ssom, NULL)){
+			/* Se crea, se le asigna SIGUSR1 a su manejadora y se pone en pause, cuando se ejecute esta manejadora el proceso morira dentro */
+			printf("Se ha creado el jefe de sala con pid %d hijo de %d.\n" ,getpid(), getppid());
+			sjef.sa_handler = manejadoraJefeSala;
+			if(-1 == sigaction(SIGUSR1, &sjef, NULL)){
 				perror("Jefe de Sala: sigaction");
 				exit(-1);
 			}
 			pause();
-		} 
-		else if(pidSomelier == -1){
+		}
+		else if(pidJefeSala == -1){
 			perror("Error en la llamada fork");
 		} else{
 			/* Código del Chef */
@@ -97,10 +97,10 @@ int main(int argc, char const *argv[]){
 			int ingredientes = calculaAleatorios(0,1);
 			if(ingredientes == 0){
 				printf("Chef: Me faltan ingredientes.\n");
-				kill(pidSomelier, SIGUSR1);
+				kill(pidSommelier, SIGUSR1);
 			} else{
 				printf("Chef: Me falta vino.\n");
-				kill(pidSomelier, SIGUSR2);
+				kill(pidSommelier, SIGUSR2);
 			}
 			
 			/* Se recoge el valor devuelto por el Sommelier y según este procede o no la ejecución */
@@ -152,10 +152,10 @@ int main(int argc, char const *argv[]){
 				kill(pidJefeSala, SIGUSR1);
 				wait(&status);
 			}
+			/* Ejecucion correcta, se acaba el programa */
+			printf("PUEDE ABRIRSE EL RESTAURANTE.\n");
 		}
 	}
-	/* Ejecucion correcta, se acaba el programa */
-	printf("PUEDE ABRIRSE EL RESTAURANTE.\n");
 	return 0;
 }
 
@@ -169,20 +169,23 @@ void manejadoraSommelier(int s){
 	printf("Somelier: Recibido Chef, ahora mismo te digo.\n");
 
 	/* Se define la estructura del mozo y se crea el proceso con un fork */
-	struct sigaction smoz = {0};
+	
 	pid_t pidMozo;
+	struct sigaction smoz = {0};
+	smoz.sa_handler = manejadoraMozo;
 	pidMozo = fork();
+	
+
 	if (pidMozo == 0){
 		/* Código del Mozo */
 
 		/* Se crea, se enmascara SIGPIPE y se pone el proceso en pausa, el proceso muere en su manejadora */
+		if(sigaction(SIGCHLD, &smoz, NULL) == -1){
+				perror("Mozo: sigaction");
+				exit(-1);
+			}
 		printf("Se ha creado el mozo con pid %d hijo de %d.\n" ,getpid(), getppid());
-		smoz.sa_handler = manejadoraMozo;
-		if(-1 == sigaction(SIGPIPE, &smoz, NULL)){
-			perror("Mozo: sigaction");
-			exit(-1);
-		}
-		pause();
+		//pause();
 	} 
 	else if(pidMozo == -1){
 		perror("Error en la llamada al fork Mozo");
@@ -193,7 +196,7 @@ void manejadoraSommelier(int s){
 		int status;
 		sleep(1);
 		printf("Somelier: ¿Has oido mozo? Busca a ver que hay.\n");
-		int killed = kill(pidMozo, SIGPIPE);
+		kill(pidMozo, SIGCHLD);
 
 		/* Se recoge el valor que deje el Mozo y segun la señal que recibio el Sommelier se sale con un valor u otro para que lo recoja el main */
 		wait(&status);
@@ -224,18 +227,14 @@ void manejadoraJefeSala(int s){
 void manejadoraMozo(int s){
 	printf("Mozo (a lo lejos): Recibido Sommelier, voy a ver que encuentro.\n");
 
-	/* El mozo no sabe lo que tiene que buscar solo si lo encuentra o no, para eso se cambia la semilla y se genera un aleatorio */
-	srand(getpid());
-	sleep(2);
-	int loEncontre = calculaAleatorios(0,1);
-
 	/* Si se encontro o no se imprime un mensaje y se sale del programa con ese valor para que lo recoja el Sommelier */
-	if(loEncontre == 1){
+	if(calculaAleatorios(0,1) == 1){
 		printf("Mozo (a lo lejos): Aqui hay si.\n");
+		exit(1);
 	} else{
 		printf("Mozo (a lo lejos): Que va, no queda nada.\n");
+		exit(0);
 	}
-	exit(loEncontre);
 }
 
 /* Manejadora del Pinche */

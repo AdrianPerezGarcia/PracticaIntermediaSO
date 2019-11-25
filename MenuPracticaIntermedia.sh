@@ -30,8 +30,7 @@ then
 				echo Codigo compilado con exito
 			;;
 			3)
-				sol=`umask`
-				if test -f PracticaIntermedia && umask >= 100
+				if test -f PracticaIntermedia
 				then
 					echo Introduce el numero de pinches
 					read pinches
