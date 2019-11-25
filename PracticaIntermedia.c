@@ -17,17 +17,17 @@ void manejadoraPinche(int s);
 /* Funcion principal */
 int main(int argc, char const *argv[]){
 
-	printf("COMIENZA EL RESTAURANTE.\n");
+	printf("||| COMIENZA EL RESTAURANTE. |||\n");
 
 	/* Compruebo que se ha introducido un solo valor positivo como argumento */
 	if (argc != 2){
 		printf("Error: Parametros incorrectos.\n");
-		printf("SE CIERRA EL RESTAURANTE.\n");
+		printf("||| SE CIERRA EL RESTAURANTE. |||\n");
 		return -1;
 	} 
 	else if(atoi(argv[1]) < 1){
 		printf("Error: El número de pinches no puede ser menor que 1.\n");
-		printf("SE CIERRA EL RESTAURANTE.\n");
+		printf("||| SE CIERRA EL RESTAURANTE. |||\n");
 		return -1;
 	}
 	printf("Se ha creado el chef con pid %d hijo de %d.\n" ,getpid(), getppid());
@@ -39,6 +39,7 @@ int main(int argc, char const *argv[]){
 	pid_t *pidPinches = (pid_t*)malloc(sizeof(pid_t)*numPinches);
 
 	/* Se definen las sigaction para el Sommelier, Jefe de Sala y Pinches (La del mozo está en la manejadora del Sommelier) */
+	/* Anotación: Se inicializan a cero ya que si no la SIGPIPE a veces se bloquea. */
 	struct sigaction ssom={0}, sjef={0}, spin={0};
 
 	pidSommelier = fork();
@@ -104,6 +105,7 @@ int main(int argc, char const *argv[]){
 			
 			/* Se recoge el valor devuelto por el Sommelier y según este procede o no la ejecución */
 			wait(&status);
+			printf("Chef: Recibido Sommelier.\n");
 			switch(WEXITSTATUS(status)){
 				case 1:
 					//No hay vino, se acaba el programa matando antes al hijo de sala y a los numPinches pinches.
@@ -112,7 +114,7 @@ int main(int argc, char const *argv[]){
 					for( i=0; i<numPinches; i++){
 						kill(*(pidPinches+i) , SIGTERM);
 					}	
-					printf("SE CIERRA EL RESTAURANTE.\n");
+					printf("||| SE CIERRA EL RESTAURANTE. |||\n");
 					return 0;
 				break;
 				case 2:
@@ -143,7 +145,7 @@ int main(int argc, char const *argv[]){
 			if(platosCreados == 0){
 				printf("Chef: No hay platos, cerramos.\n");
 				kill(pidJefeSala, SIGTERM);
-				printf("SE CIERRA EL RESTAURANTE.\n");
+				printf("||| SE CIERRA EL RESTAURANTE. |||\n");
 				return 0;
 			} else{
 				printf("Chef: Tenemos %d platos cocinados, monta las mesas Jefe de Sala.\n", platosCreados);
@@ -152,7 +154,7 @@ int main(int argc, char const *argv[]){
 				wait(&status);
 			}
 			/* Ejecucion correcta, se acaba el programa */
-			printf("PUEDE ABRIRSE EL RESTAURANTE.\n");
+			printf("||| PUEDE ABRIRSE EL RESTAURANTE. |||\n");
 		}
 	}
 	return 0;
@@ -165,8 +167,10 @@ int calculaAleatorios(int min, int max){
 
 /* Manejadora del Sommelier */
 void manejadoraSommelier(int s){
-	/* Se crea el proceso Mozo con un fork */
+
+	printf("Somelier: Recibido Chef, ahora mismo te digo.\n");
 	
+	/* Se crea el proceso Mozo con un fork */
 	pid_t pidMozo;
 	pidMozo = fork();
 
@@ -187,7 +191,6 @@ void manejadoraSommelier(int s){
 		perror("Error en la llamada al fork Mozo");
 	}else{
 		/* Código del Sommelier */
-		printf("Somelier: Recibido Chef, ahora mismo te digo.\n");
 
 		/* Se duerme un tiempo para que al Mozo le de tiempo a enmascarar la señal y se le envia la señal SIGPIPE */ 
 		int status;
@@ -197,8 +200,13 @@ void manejadoraSommelier(int s){
 
 		/* Se recoge el valor que deje el Mozo y segun la señal que recibio el Sommelier se sale con un valor u otro para que lo recoja el main */
 		wait(&status);
+		printf("Sommelier: Recibido Mozo.\n");
 		if (WEXITSTATUS(status) == 1){
-			printf("Sommelier: Todo listo Chef.\n");
+			if(s == SIGUSR1){
+				printf("Sommelier: Tenemos todos los ingredientes Chef.\n");
+			} else{
+				printf("Sommelier: Hemos encontrado el vino Chef.\n");
+			}
 			exit(3);
 		} else if(s == SIGUSR1){
 			printf("Sommelier: No tenemos los ingredientes Chef.\n");
@@ -212,6 +220,7 @@ void manejadoraSommelier(int s){
 
 /* Manejadora del Jefe de Sala */
 void manejadoraJefeSala(int s){
+	
 	printf("Jefe de Sala: Recibido Chef, me pongo a ello.\n");
 
 	/* Se realiza el procedimiento especificado en el enunciado y se sale con un valor 0 para que el main lo recoja */
@@ -222,9 +231,11 @@ void manejadoraJefeSala(int s){
 
 /* Manejadora del Mozo */
 void manejadoraMozo(int s){
+	
 	printf("Mozo (a lo lejos): Recibido Sommelier, voy a ver que encuentro.\n");
 
 	/* Si se encontro o no se imprime un mensaje y se sale del programa con ese valor para que lo recoja el Sommelier */
+	/* Anotación: El mozo no sabe lo que tiene que buscar, solo busca algo y devuelve si lo encontro o no */
 	if(calculaAleatorios(0,1) == 1){
 		printf("Mozo (a lo lejos): Aqui hay si.\n");
 		exit(1);
@@ -236,6 +247,7 @@ void manejadoraMozo(int s){
 
 /* Manejadora del Pinche */
 void manejadoraPinche(int s){
+	
 	printf("Pinche: Recibido Chef, me pongo a preparar el plato.\n");
 
 	/* Se cambia la semilla al pid del pinche para generar los aleatorios del tiempo de sueño y si se ha preparado o no */

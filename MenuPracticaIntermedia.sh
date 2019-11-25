@@ -36,6 +36,7 @@ then
 					then
 						echo Introduce el numero de pinches
 						read pinches
+						echo -e
 						./PracticaIntermedia $pinches
 					else
 						echo Error: No hay permisos de ejecucion
