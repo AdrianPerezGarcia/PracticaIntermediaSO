@@ -32,11 +32,16 @@ then
 			3)
 				if test -f PracticaIntermedia
 				then
-					echo Introduce el numero de pinches
-					read pinches
-					./PracticaIntermedia $pinches
+					if test -x PracticaIntermedia
+					then
+						echo Introduce el numero de pinches
+						read pinches
+						./PracticaIntermedia $pinches
+					else
+						echo Error: No hay permisos de ejecucion
+					fi
 				else 
-					echo Error: No existe el ejecutable o no tiene permisos de ejecución
+					echo Error: No existe el ejecutable
 				fi
 			;;
 			4)

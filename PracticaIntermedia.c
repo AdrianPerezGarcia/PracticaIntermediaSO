@@ -39,7 +39,7 @@ int main(int argc, char const *argv[]){
 	pid_t *pidPinches = (pid_t*)malloc(sizeof(pid_t)*numPinches);
 
 	/* Se definen las sigaction para el Sommelier, Jefe de Sala y Pinches (La del mozo está en la manejadora del Sommelier) */
-	struct sigaction ssom, sjef, spin;
+	struct sigaction ssom={0}, sjef={0}, spin={0};
 
 	pidSommelier = fork();
 	if(pidSommelier == 0){
@@ -87,7 +87,6 @@ int main(int argc, char const *argv[]){
 						exit(-1);
 					}
 					pause();
-					break;
 				}
 			}
 
@@ -166,37 +165,35 @@ int calculaAleatorios(int min, int max){
 
 /* Manejadora del Sommelier */
 void manejadoraSommelier(int s){
-	printf("Somelier: Recibido Chef, ahora mismo te digo.\n");
-
-	/* Se define la estructura del mozo y se crea el proceso con un fork */
+	/* Se crea el proceso Mozo con un fork */
 	
 	pid_t pidMozo;
-	struct sigaction smoz = {0};
-	smoz.sa_handler = manejadoraMozo;
 	pidMozo = fork();
-	
 
 	if (pidMozo == 0){
 		/* Código del Mozo */
 
 		/* Se crea, se enmascara SIGPIPE y se pone el proceso en pausa, el proceso muere en su manejadora */
-		if(sigaction(SIGCHLD, &smoz, NULL) == -1){
-				perror("Mozo: sigaction");
-				exit(-1);
-			}
+		struct sigaction smoz = {0};
+		smoz.sa_handler = manejadoraMozo;
+		if(sigaction(SIGPIPE, &smoz, NULL) == -1){
+			perror("Mozo: sigaction");
+			exit(-1);
+		}
 		printf("Se ha creado el mozo con pid %d hijo de %d.\n" ,getpid(), getppid());
-		//pause();
+		pause();
 	} 
 	else if(pidMozo == -1){
 		perror("Error en la llamada al fork Mozo");
 	}else{
 		/* Código del Sommelier */
+		printf("Somelier: Recibido Chef, ahora mismo te digo.\n");
 
 		/* Se duerme un tiempo para que al Mozo le de tiempo a enmascarar la señal y se le envia la señal SIGPIPE */ 
 		int status;
-		sleep(1);
+		sleep(2);
 		printf("Somelier: ¿Has oido mozo? Busca a ver que hay.\n");
-		kill(pidMozo, SIGCHLD);
+		kill(pidMozo, SIGPIPE);
 
 		/* Se recoge el valor que deje el Mozo y segun la señal que recibio el Sommelier se sale con un valor u otro para que lo recoja el main */
 		wait(&status);
